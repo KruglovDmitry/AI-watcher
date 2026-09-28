@@ -45,6 +45,15 @@ async def start_bot_with_retries(bot_app, state: dict, max_attempts: int = 12) -
                     await bot_app.shutdown()
             except Exception:
                 logger.exception("Ошибка при откате инициализации бота")
+            # getMe мог оборваться уже после флага initialized: следующий
+            # initialize() тогда пропускает getMe и start() падает на bot.id.
+            bot = getattr(bot_app, "bot", None)
+            if bot is not None and getattr(bot, "_bot_user", None) is None:
+                bot._initialized = False
+            updater = getattr(bot_app, "updater", None)
+            if updater is not None:
+                updater._initialized = False
+            bot_app._initialized = False
             if attempt == max_attempts:
                 state["bot_ready"] = False
                 logger.error("Telegram-бот не запущен. API и админка работают без бота.")

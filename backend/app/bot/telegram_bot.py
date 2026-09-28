@@ -1,6 +1,19 @@
 from __future__ import annotations
 
 import logging
+import socket
+
+# На сервере нет маршрута IPv6, а api.telegram.org отдаёт AAAA.
+_orig_getaddrinfo = socket.getaddrinfo
+
+
+def _ipv4_getaddrinfo(host, port, family=0, type=0, proto=0, flags=0):
+    if family == 0:
+        family = socket.AF_INET
+    return _orig_getaddrinfo(host, port, family, type, proto, flags)
+
+
+socket.getaddrinfo = _ipv4_getaddrinfo
 
 from telegram import Update
 from telegram.ext import (
